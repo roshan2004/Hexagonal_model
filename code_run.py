@@ -3,6 +3,14 @@ from MDAnalysis.lib.distances import calc_angles, calc_bonds, calc_dihedrals
 import numpy as np
 import argparse
 
+# Argument Parser
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--filename", type = str, default='martini_graphene', help = 'Name of the output, default = martini_graphene')
+
+args = parser.parse_args()
+
+filename = args.filename
+
 
 while True:
     rows = int(input("Enter the number of rows, make sure that it is odd, and greater than 3: "))
@@ -25,7 +33,9 @@ while True:
 
 
 
-
+#----------------#
+# Structure File #
+#----------------#
 
 
 
@@ -73,7 +83,7 @@ w.atoms.positions = positions
 w.atoms.write('input.gro')
 
 
-u = mda.Universe('input.gro')
+u = mda.Universe(filename+'.gro')
 c = np.unique(u.atoms.positions[:,1]) # finding the unique y-coordinate so that we can loop through each row of atoms
 u.atoms.masses = 36    # Since it's a TC5 bead, we use a mass of 36 for each
 
@@ -146,11 +156,89 @@ def angles(universe):
     list_of_angles = []
     for element in hexagon(u):
         for i in range(len(element)):
-            list_of_angles.append((element[i-1], element[i], element[(i+1) % len(element)]))
+            list_of_angles.append((element[i-1], element[i], element[(i+1) % len(element)])) # % operator is used to wrap the indices around the end of the list, so that the triplets at the beginning and end of the list include the first and last elements
+    
     
             
             
     return list_of_angles
+
+#---------------#
+# Topology File #
+#---------------#
+
+
+# Open the file for writing
+
+topology_file = open(filename+".itp", 'w')
+
+# Variables
+
+
+
+# Header
+
+topology_file.write( "; \n;  Graphene topology\n; for the Martini3 force field\n;\n; created by martini3-graphene-topology.py\n;\n" )
+topology_file.write( "; Roshan Shrestha\n; CNRS\n;\n\n" )
+
+topology_file.write("[ moleculetype ]\n")
+topology_file.write("; molname	 nrexcl\n")
+topology_file.write("  GRA           1")
+
+
+
+# Atoms
+
+topology_file.write( "\n[ atoms ]\n" )
+topology_file.write( "; nr	 type	 resnr	 residue	 atom	 cgnr	 charge	 mass\n" )
+
+#for i in range(1, numatoms+1):
+
+
+
+# Bonds
+
+topology_file.write( "\n[ bonds ]\n" )
+topology_file.write( "; i	 j	  funct	 length	 kb\n" )
+
+
+
+
+
+
+
+
+
+
+# Angles
+
+topology_file.write( "\n[ angles ]\n" )
+topology_file.write( "; i	 j	 k	 funct	 angle	 force_k\n" )
+
+
+
+
+
+# Improper Dihedrals
+
+topology_file.write( "\n[ dihedrals ]\n" )
+topology_file.write( "; i	 j	 k	 l     funct	 ref.angle     force_k\n" )
+
+
+
+
+# Virtual sites
+
+topology_file.write( "\n[ virtual_sitesn ]\n" )
+topology_file.write( "; site	 funct	 constructing atom indices\n" )
+
+
+
+topology_file.close()
+
+
+
+
                         
         
         
