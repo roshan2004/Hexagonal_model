@@ -81,7 +81,21 @@ u.atoms.masses = 36    # Since it's a TC5 bead, we use a mass of 36 for each
 '''
 Identifying the indices of the virtual sites, and setting their mass to zero
 '''
-for j in range(len(c)): # Looping through each row
+def virtual_site(universe):
+    ''' Return the serial or (1-based) index for virtual sites, and also sets the mass for the virtual-site to 0'''
+    for j in range(len(c)): # Looping through each row, defined by the y-coordinate
+        if (j !=0) and (j !=len(c)-1):
+            if j % 2 !=0:
+                group = u.atoms[u.atoms.positions[:,1] == c[j]]
+                gr = np.arange(1, len(group), 3)
+                print(gr)
+                for k in gr:
+                    u.atoms[group[k].index].mass = 0
+    
+    return u.atoms[u.atoms.masses == 0].indices + 1
+
+    
+for j in range(len(c)): # Looping through each row, defined by the y-coordinate
     if (j !=0) and (j !=len(c)-1):
         if j % 2 !=0:
             group = u.atoms[u.atoms.positions[:,1] == c[j]]
@@ -130,6 +144,12 @@ def bonds(universe):
 def angles(universe):
     ''' Returns the list of triplet of indices for which an angle is defined '''
     list_of_angles = []
+    for element in hexagon(u):
+        for i in range(len(element)):
+            list_of_angles.append((element[i-1], element[i], element[(i+1) % len(element)]))
+    
+            
+            
     return list_of_angles
                         
         
