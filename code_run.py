@@ -2,6 +2,7 @@ import MDAnalysis as mda
 from MDAnalysis.lib.distances import calc_angles, calc_bonds, calc_dihedrals
 import numpy as np
 import argparse
+import math
 
 # Argument Parser
 parser = argparse.ArgumentParser()
@@ -80,7 +81,7 @@ for i in range(rows):
 
 w = mda.Universe.empty(n_atoms = len(positions), trajectory = True) # Creating an empty Universe with atoms, and trajectory is True for writing positions
 w.atoms.positions = positions
-w.atoms.write('input.gro')
+w.atoms.write(filename+'.gro')
 
 
 u = mda.Universe(filename+'.gro')
@@ -98,7 +99,7 @@ def virtual_site(universe):
             if j % 2 !=0:
                 group = u.atoms[u.atoms.positions[:,1] == c[j]]
                 gr = np.arange(1, len(group), 3)
-                print(gr)
+                
                 for k in gr:
                     u.atoms[group[k].index].mass = 0
     
@@ -110,7 +111,7 @@ for j in range(len(c)): # Looping through each row, defined by the y-coordinate
         if j % 2 !=0:
             group = u.atoms[u.atoms.positions[:,1] == c[j]]
             gr = np.arange(1, len(group), 3)
-            print(gr)
+            
             for k in gr:
                 u.atoms[group[k].index].mass = 0
             
@@ -142,24 +143,40 @@ def hexagon(universe):
 def bonds(universe):
     ''' Returns the list of pair of indices for which bonds are defined '''
     list_of_bonds = []
+    bds = []
     for element in hexagon(u):
         for i in element:
             for j in element:
                 if i < j:
                     if (2.55 <= calc_bonds(u.atoms[j].position, u.atoms[i].position) <= 2.57):
-                        list_of_bonds.append((i,j))
+                        bds.append((i,j))
+                        
+    for bond in bds:
+        if bond not in list_of_bonds:
+            list_of_bonds.append(bond)
+                        
+    
     return list_of_bonds
                         
                         
 def angles(universe):
     ''' Returns the list of triplet of indices for which an angle is defined '''
     list_of_angles = []
-    for element in hexagon(u):
-        for i in range(len(element)):
-            list_of_angles.append((element[i-1], element[i], element[(i+1) % len(element)])) # % operator is used to wrap the indices around the end of the list, so that the triplets at the beginning and end of the list include the first and last elements
-    
-    
+    dd = []
+    for hex in hexagon(u):
+        for i in hex:
+            for j in hex:
+                for k in hex:
+                    if (119 <= math.degrees(calc_angles(u.atoms[i].position, u.atoms[j].position, u.atoms[k].position)) <= 121):
+                        dd.append([i,j,k])
+                        
+    for angle in dd:
+        if angle[0] > angle[-1]:
+            angle[0], angle[-1] = angle[-1], angle[0]
             
+    for val in dd:
+        if val not in list_of_angles:
+            list_of_angles.append(val)
             
     return list_of_angles
 
@@ -167,7 +184,7 @@ def angles(universe):
 
 def virtual_sites(universe):
     
-    ''' Identifying the vertics of hexagon around a virtual site '''
+    ''' Returns the list of virtual site, and its corresponding four beads from which it is constructed '''
     
     b = u.atoms[u.atoms.masses == 0].indices
     hexagon_indices = []
@@ -186,11 +203,15 @@ def virtual_sites(universe):
         
     return hexagon_indices
 
+for i in virtual_sites(u):
+    for j in i[1:]:
+        u.atoms[j].mass +=9
 
 
-def virtual_sites(universe):
+
+def exclusions(universe):
     
-    ''' Identifying the vertics of hexagon around a virtual site '''
+    ''' Returns the list of virtual site and its neighbouring 6 beads for exclusions'''
     
     b = u.atoms[u.atoms.masses == 0].indices
     hexagon_indices = []
@@ -233,8 +254,8 @@ topology_file.write("  GRA           1")
 
 topology_file.write( "\n[ atoms ]\n" )
 topology_file.write( "; nr	 type	 resnr	 residue	 atom	 cgnr	 charge	 mass\n" )
-
-#for i in range(1, numatoms+1):
+for i in range(1, u.atoms.n_atoms+1):
+    topology_file.write(f"  {i:<5}     TC5     0     GRA     B{i:<5}     {i:<5}     0     {int(u.atoms[i-1].mass)}\n")
 
 
 
@@ -242,6 +263,8 @@ topology_file.write( "; nr	 type	 resnr	 residue	 atom	 cgnr	 charge	 mass\n" )
 
 topology_file.write( "\n[ bonds ]\n" )
 topology_file.write( "; i	 j	  funct	 length	 kb\n" )
+for i in bonds(u):
+    topology_file.write(f"  {i[0]+1:<3}     {i[1]+1:<3}     1    0.24595     10000\n")
 
 
 
@@ -256,6 +279,8 @@ topology_file.write( "; i	 j	  funct	 length	 kb\n" )
 
 topology_file.write( "\n[ angles ]\n" )
 topology_file.write( "; i	 j	 k	 funct	 angle	 force_k\n" )
+for i in angles(u):
+    topology_file.write(f"  {i[0]+1:<3}     {i[1]+1:<3}     {i[2]+1:<3}     1    120     50\n")
 
 
 
