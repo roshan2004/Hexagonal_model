@@ -163,6 +163,48 @@ def angles(universe):
             
     return list_of_angles
 
+
+
+def virtual_sites(universe):
+    
+    ''' Identifying the vertics of hexagon around a virtual site '''
+    
+    b = u.atoms[u.atoms.masses == 0].indices
+    hexagon_indices = []
+    for i in b:
+        empty = []
+        
+        for j in u.atoms.indices:
+            if (2.55 <= calc_bonds(u.atoms[j].position, u.atoms[i].position) <= 2.57):
+                empty.append(u.atoms[j])
+        empty = sorted(empty, key = lambda x: x.position[1])
+        empty = [i.index for i in empty]
+        data = empty[:2] + empty[-2:]
+        data.append(u.atoms[i].index)
+        data = data[::-1]
+        hexagon_indices.append(data)
+        
+    return hexagon_indices
+
+
+
+def virtual_sites(universe):
+    
+    ''' Identifying the vertics of hexagon around a virtual site '''
+    
+    b = u.atoms[u.atoms.masses == 0].indices
+    hexagon_indices = []
+    for i in b:
+        empty = []
+        empty.append(i)
+        for j in u.atoms.indices:
+            if (2.55 <= calc_bonds(u.atoms[j].position, u.atoms[i].position) <= 2.57):
+                empty.append(j)
+        
+        hexagon_indices.append(empty)
+    return hexagon_indices
+
+
 #---------------#
 # Topology File #
 #---------------#
@@ -231,8 +273,13 @@ topology_file.write( "; i	 j	 k	 l     funct	 ref.angle     force_k\n" )
 
 topology_file.write( "\n[ virtual_sitesn ]\n" )
 topology_file.write( "; site	 funct	 constructing atom indices\n" )
+for i in virtual_sites(u):
+    topology_file.write(f"  {i[0]+1:<3}     1     {i[1]+1:<3}     {i[2]+1:<3}     {i[3]+1:<3}    {i[4]+1:<3}\n")
 
-
+# Exclusions
+topology_file.write( "\n[ exclusions ]\n" )
+for i in exclusions(u):
+    topology_file.write(f"  {i[0]+1:<3}     {i[1]+1:<3}     {i[2]+1:<3}     {i[3]+1:<3}    {i[4]+1:<3}     {i[5]+1:<3}     {i[6]+1:<3}\n")
 
 topology_file.close()
 

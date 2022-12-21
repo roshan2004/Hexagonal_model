@@ -1,0 +1,27 @@
+; 
+;  Graphene topology
+; for the Martini3 force field
+;
+; created by martini3-graphene-topology.py
+;
+; Roshan Shrestha
+; CNRS
+;
+
+[ moleculetype ]
+; molname	 nrexcl
+  GRA           1
+[ atoms ]
+; nr	 type	 resnr	 residue	 atom	 cgnr	 charge	 mass
+
+[ bonds ]
+; i	 j	  funct	 length	 kb
+
+[ angles ]
+; i	 j	 k	 funct	 angle	 force_k
+
+[ dihedrals ]
+; i	 j	 k	 l     funct	 ref.angle     force_k
+
+[ virtual_sitesn ]
+; site	 funct	 constructing atom indices
